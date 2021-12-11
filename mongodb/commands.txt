@@ -1,0 +1,104 @@
+docker volume rm $(docker volume ls -q)
+
+docker ps
+docker-compose -f configsvrs/docker-compose.yml ps
+
+docker-compose -f configsvrs/docker-compose.yml up -d
+docker-compose -f configsvrs/docker-compose.yml down -v
+
+
+mongo mongodb://localhost:40001
+
+rs.initiate(
+  {
+    _id: "cfgrs",
+    configsvr: true,
+    members: [
+      { _id : 0, host : "192.168.1.2:40001" },
+      { _id : 1, host : "192.168.1.2:40002" }
+    ]
+  }
+)
+
+rs.status()
+
+
+docker-compose -f shards/docker-compose.yml up -d
+docker-compose -f shards/docker-compose.yml down -v
+
+mongo mongodb://localhost:50001
+
+rs.initiate(
+  {
+    _id : "shard0",
+    members: [
+      { _id : 0, host : "192.168.1.2:50001" },
+      { _id : 1, host : "192.168.1.2:50002" }
+    ]
+  }
+)
+
+mongo mongodb://localhost:50003
+
+rs.initiate(
+  {
+    _id : "shard1",
+    members: [
+      { _id : 0, host : "192.168.1.2:50003" },
+      { _id : 1, host : "192.168.1.2:50004" }
+    ]
+  }
+)
+
+docker-compose -f router/docker-compose.yml up -d
+docker-compose -f router/docker-compose.yml down -v
+
+mongo mongodb://localhost:60000
+
+sh.addShard( "shard0/192.168.1.2:50001,192.168.1.2:50002")
+sh.addShard( "shard1/192.168.1.2:50003,192.168.1.2:50004")
+sh.addShardTag("shard0", "DBMS1")
+sh.addShardTag("shard1", "DBMS2")
+sh.addShardTag("shard0", "DBMS")
+sh.addShardTag("shard1", "DBMS")
+
+use demo
+sh.enableSharding("demo")
+
+db.createCollection("user")
+sh.shardCollection("demo.user", {"region": 1, "uid": 1})
+sh.addTagRange( 
+  "demo.user",
+  { "region" : "Beijing", "uid" : MinKey },
+  { "region" : "Beijing", "uid" : MaxKey }, 
+  "DBMS1"
+)
+sh.addTagRange( 
+  "demo.user",
+  { "region" : "Hong Kong", "uid" : MinKey },
+  { "region" : "Hong Kong", "uid" : MaxKey }, 
+  "DBMS2"
+)
+
+db.createCollection("article")
+sh.shardCollection("demo.article", {"category": 1, "aid": 1})
+sh.addTagRange( 
+  "demo.article",
+  { "category" : "science", "aid" : MinKey },
+  { "category" : "science", "aid" : MaxKey }, 
+  "DBMS"
+)
+sh.addTagRange( 
+  "demo.article",
+  { "category" : "technology", "aid" : MinKey },
+  { "category" : "technology", "aid" : MaxKey }, 
+  "DBMS2"
+)
+sh.disableBalancing("demo.article")
+
+sh.addTagRange( 
+  "demo.read",
+  { "category" : "technology", "aid" : MinKey },
+  { "category" : "technology", "aid" : MaxKey }, 
+  "DBMS2"
+)
