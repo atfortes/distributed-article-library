@@ -4,8 +4,6 @@ docker ps
 docker-compose -f configsvrs/docker-compose.yml ps
 
 docker-compose -f configsvrs/docker-compose.yml up -d
-docker-compose -f configsvrs/docker-compose.yml down -v
-
 
 mongo mongodb://localhost:40001
 
@@ -24,7 +22,6 @@ rs.status()
 
 
 docker-compose -f shards/docker-compose.yml up -d
-docker-compose -f shards/docker-compose.yml down -v
 
 mongo mongodb://localhost:50001
 
@@ -61,7 +58,6 @@ rs.initiate(
 )
 
 docker-compose -f router/docker-compose.yml up -d
-docker-compose -f router/docker-compose.yml down -v
 
 mongo mongodb://localhost:60000
 
@@ -123,3 +119,8 @@ sh.addTagRange(
   { "id" : MaxKey },
   "DBMS2"
 )
+
+
+docker-compose -f configsvrs/docker-compose.yml down -v
+docker-compose -f shards/docker-compose.yml down -v
+docker-compose -f router/docker-compose.yml down -v

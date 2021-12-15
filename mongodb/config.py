@@ -118,7 +118,5 @@ class MongoInit:
 
 
 if __name__ == '__main__':
-    '''init = MongoInit()
-    init.init_all()'''
-    print(QueryManager.query_read({}))
-
+    init = MongoInit()
+    init.init_all()
