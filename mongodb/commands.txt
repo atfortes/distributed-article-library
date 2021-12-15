@@ -88,6 +88,7 @@ sh.addTagRange(
   "DBMS2"
 )
 
+
 sh.shardCollection("demo.article_science", {"aid": 1})
 sh.addTagRange( 
   "demo.article_science",
@@ -104,6 +105,7 @@ sh.addTagRange(
   "DBMS2"
 )
 
+
 sh.shardCollection("demo.read_beijing", {"id": 1})
 sh.addTagRange( 
   "demo.read_beijing",
@@ -117,6 +119,23 @@ sh.addTagRange(
   "demo.read_hong_kong",
   { "id" : MinKey },
   { "id" : MaxKey },
+  "DBMS2"
+)
+
+
+sh.shardCollection("demo.be_read_science", {"aid": 1})
+sh.addTagRange(
+  "demo.be_read_science",
+  { "aid" : MinKey },
+  { "aid" : MaxKey },
+  "DBMS12"
+)
+
+sh.shardCollection("demo.be_read_tech", {"aid": 1})
+sh.addTagRange(
+  "demo.be_read_tech",
+  { "aid" : MinKey },
+  { "aid" : MaxKey },
   "DBMS2"
 )
 

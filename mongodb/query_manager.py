@@ -4,28 +4,33 @@ from config import *
 class QueryManager:
     @classmethod
     def query_user(self, query={}, field={}):
-        cols = list(MongoCollections.user().values())
+        cols = list(User.user().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
     def query_one_user(self, query={}, field={}):
-        cols = list(MongoCollections.user().values())
+        cols = list(User.user().values())
         result = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
         return result[0]
 
     @classmethod
     def query_article(self, query={}, field={}):
-        cols = list(MongoCollections.article().values())
+        cols = list(Article.article().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
     def query_read(self, query={}, field={}):
-        cols = list(MongoCollections.read().values())
+        cols = list(Read.read().values())
+        return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
+
+    @classmethod
+    def query_be_read(self, query={}, field={}):
+        cols = list(BeRead.be_read().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
     def query_join_read_user(self, query={}, field={}):
-        cols = list(MongoCollections.read().values())
+        cols = list(Read.read().values())
         read_res = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
         uids = list(set(map(lambda x: x['uid'], read_res)))
         user_res = self.query_user({'uid': {'$in': uids}})
@@ -36,7 +41,7 @@ class QueryManager:
 
     @classmethod
     def query_join_user_read(self, query={}, field={}):
-        cols = list(MongoCollections.user().values())
+        cols = list(User.user().values())
         user_res = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
         uids = list(set(map(lambda x: x['uid'], user_res)))
         read_res = self.query_read({'uid': {'$in': uids}})

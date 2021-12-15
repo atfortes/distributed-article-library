@@ -1,4 +1,5 @@
-from config import *
+from collection import *
 
-class PopularRank:
+
+class PopularRank(Collection):
     pass
