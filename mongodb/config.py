@@ -53,29 +53,19 @@ class MongoInit:
         print('Initializing read collection...\n')
         read_file = open(self.root_dir + self.read_path, 'r')
         bulk_counter, bulk_list, uids = 0, [], []
-        be_read_docs_dict = {}
         for line in read_file.readlines():
             bulk_counter += 1
             doc = json.loads(line)
             uids += [doc['uid']]
             bulk_list += [InsertOne(doc)]
-            if not doc['aid'] in be_read_docs_dict:
-                be_read_docs_dict[doc['aid']] = self.create_be_read_doc(
-                    doc['aid'], doc['uid'], int(doc['commentOrNot']), int(doc['agreeOrNot']), int(doc['shareOrNot'])
-                )
-            if doc['aid'] in be_read_docs_dict:
-                be_read_docs_dict[doc['aid']] = self.increment_be_read_doc(
-                    be_read_docs_dict[doc['aid']], doc['uid'], int(doc['commentOrNot']), int(doc['agreeOrNot']), int(doc['shareOrNot'])
-                )
             if bulk_counter == self.bulk_size_read:
                 regions = QueryManager.query_user({'uid': {'$in': uids}}, {'uid': 1, 'region': 1})
                 regions = dict(map(lambda x: (x['uid'], x['region']), regions))
                 regions = list(map(lambda x: regions[x], uids))
                 beijing_index = np.argwhere(np.array(regions) == 'Beijing').reshape(-1)
                 hk_index = np.argwhere(np.array(regions) == 'Hong Kong').reshape(-1)
-                Read.bulk_write({'Beijing': np.array(bulk_list)[beijing_index],
-                                  'Hong Kong': np.array(bulk_list)[hk_index]})
-                self.init_be_read(be_read_docs_dict)
+                Read.bulk_write({'Beijing': list(np.array(bulk_list)[beijing_index]),
+                                 'Hong Kong': list(np.array(bulk_list)[hk_index])})
                 bulk_counter, bulk_list, uids = 0, [], []
         if bulk_counter > 0:
             regions = QueryManager.query_user({'uid': {'$in': uids}}, {'uid': 1, 'region': 1})
@@ -83,78 +73,69 @@ class MongoInit:
             regions = list(map(lambda x: regions[x], uids))
             beijing_index = np.argwhere(np.array(regions) == 'Beijing').reshape(-1)
             hk_index = np.argwhere(np.array(regions) == 'Hong Kong').reshape(-1)
-            Read.bulk_write({'Beijing': np.array(bulk_list)[beijing_index],
-                              'Hong Kong': np.array(bulk_list)[hk_index]})
-            self.init_be_read(be_read_docs_dict)
+            Read.bulk_write({'Beijing': list(np.array(bulk_list)[beijing_index]),
+                             'Hong Kong': list(np.array(bulk_list)[hk_index])})
+        self.init_be_read()
         read_file.close()
 
-    def init_be_read(self, docs_dict):
-        bulk_list = []
-        categories = QueryManager.query_user({'uid': {'$in': list(docs_dict.keys())}}, {'aid': 1, 'category': 1})
-        categories = dict(map(lambda x: (x['aid'], x['category']), categories))
-        categories = list(map(lambda x: categories[x], docs_dict.keys()))
-        science_index = np.argwhere(np.array(categories) == 'science').reshape(-1)
-        tech_index = np.argwhere(np.array(categories) == 'technology').reshape(-1)
-        for aid in docs_dict:
-            res = QueryManager.query_be_read({'aid': aid})
-            if res:
-                bulk_list += [UpdateOne(self.sum_be_read_docs(res[0], docs_dict[aid]))]
+
+    def init_be_read(self):
+        print('Initializing be-read collection...\n')
+        bulk_counter, bulk_list, bulk_aids = 0, [], []
+        aids = QueryManager.query_article({}, {'aid': 1})
+        aids = set(map(lambda x: x['aid'], aids))
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}}, {'aid': 1, 'uid': 1})
+        read_num, read_list = self.iterate_query_be_read(res)
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "commentOrNot": '1'}, {'aid': 1, 'uid': 1})
+        comment_num, comment_list = self.iterate_query_be_read(res)
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "agreeOrNot": '1'}, {'aid': 1, 'uid': 1})
+        agree_num, agree_list = self.iterate_query_be_read(res)
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "shareOrNot": '1'}, {'aid': 1, 'uid': 1})
+        share_num, share_list = self.iterate_query_be_read(res)
+        for aid in aids:
+            bulk_counter += 1
+            bulk_aids += [aid]
+            doc = {
+                'id': f'br{aid}',
+                'timestamp': Collection.get_current_timestamp(),
+                'aid': aid,
+                'readNum': read_num[aid],
+                'readUidList': read_list[aid],
+                'commentNum': comment_num[aid],
+                'commentUidList': comment_list[aid],
+                'agreeNum': agree_num[aid],
+                'agreeUidList': agree_list[aid],
+                'shareNum': share_num[aid],
+                'shareUidList': share_list[aid],
+            }
+            bulk_list += [InsertOne(doc)]
+            if bulk_counter == self.bulk_size:
+                categories = QueryManager.query_article({'aid': {'$in': bulk_aids}}, {'category': 1})
+                categories = list(map(lambda x: x['category'], categories))
+                science_index = np.argwhere(np.array(categories) == 'science').reshape(-1)
+                tech_index = np.argwhere(np.array(categories) == 'technology').reshape(-1)
+                BeRead.bulk_write({'science': list(np.array(bulk_list)[science_index]),
+                                   'technology': list(np.array(bulk_list)[tech_index])})
+                bulk_counter, bulk_list, bulk_aids = 0, [], []
+        if bulk_counter > 0:
+            categories = QueryManager.query_article({'aid': {'$in': bulk_aids}}, {'category': 1})
+            categories = list(map(lambda x: x['category'], categories))
+            science_index = np.argwhere(np.array(categories) == 'science').reshape(-1)
+            tech_index = np.argwhere(np.array(categories) == 'technology').reshape(-1)
+            BeRead.bulk_write({'science': list(np.array(bulk_list)[science_index]),
+                               'technology': list(np.array(bulk_list)[tech_index])})
+
+    def iterate_query_be_read(self, res):
+        out_dict = {}
+        for i in res:
+            if not i['aid'] in out_dict:
+                out_dict[i['aid']] = [i['uid']]
             else:
-                bulk_list += [InsertOne(docs_dict[aid])]
-        Read.bulk_write({'science': np.array(bulk_list)[science_index],
-                         'technology': np.array(bulk_list)[tech_index]})
+                out_dict[i['aid']] += [i['uid']]
+        out_num = dict(map(lambda x: (x[0], str(len(x[1]))), out_dict.items()))
+        out_list = dict(map(lambda x: (x[0], list(set(x[1]))), out_dict.items()))
+        return out_num, out_list
 
-    def create_be_read_doc(self, aid, uid, comment, agree, share):
-        comList, aggList, shrList = [], [], []
-        if comment:
-            comList = [uid, ]
-        if agree:
-            aggList = [uid, ]
-        if share:
-            shrList = [uid, ]
-        return {
-                    'id': f'br{aid}',
-                    'timestamp': Collection.get_current_timestamp(),
-                    'aid': aid,
-                    'readNum': '1',
-                    'readUidList': [uid, ],
-                    'commentNum': str(comment),
-                    'commentUidList': comList,
-                    'agreeNum': str(agree),
-                    'agreeUidList': aggList,
-                    'shareNum': str(share),
-                    'shareUidList': shrList,
-                }
-
-    def increment_be_read_doc(self, current_doc, uid, comment, agree, share):
-        incremented_doc = current_doc
-        incremented_doc['readNum'] = str(int(incremented_doc['readNum']) + 1)
-        incremented_doc['readUidList'] += [uid]
-        if comment:
-            incremented_doc['commentNum'] = str(int(incremented_doc['commentNum']) + 1)
-            incremented_doc['commentUidList'] += [uid]
-        if agree:
-            incremented_doc['commentNum'] = str(int(incremented_doc['commentNum']) + 1)
-            incremented_doc['commentUidList'] += [uid]
-        if share:
-            incremented_doc['shareNum'] = str(int(incremented_doc['shareNum']) + 1)
-            incremented_doc['shareUidList'] += [uid]
-        return incremented_doc
-
-    def sum_be_read_docs(self, doc1, doc2):
-        return {
-                    'id': doc1['id'],
-                    'timestamp': Collection.get_current_timestamp(),
-                    'aid': doc1['aid'],
-                    'readNum': str(int(doc1['readNum']) + int(doc2['readNum'])),
-                    'readUidList': doc1['readUidList'] + doc2['readUidList'],
-                    'commentNum': str(int(doc1['commentNum']) + int(doc2['commentNum'])),
-                    'commentUidList': doc1['commentUidList'] + doc2['commentUidList'],
-                    'agreeNum': str(int(doc1['agreeNum']) + int(doc2['agreeNum'])),
-                    'agreeUidList': doc1['agreeUidList'] + doc2['agreeUidList'],
-                    'shareNum': str(int(doc1['shareNum']) + int(doc2['shareNum'])),
-                    'shareUidList': doc1['shareUidList'] + doc2['shareUidList'],
-                }
 
     def init_all(self):
         self.init_user()
@@ -165,3 +146,4 @@ class MongoInit:
 if __name__ == '__main__':
     init = MongoInit()
     init.init_all()
+
