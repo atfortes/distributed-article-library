@@ -1,0 +1,14 @@
+# build image if not built yet
+sudo ./build-image.sh
+
+# start containers
+sudo ./start-container.sh
+
+# start hdfs nodes
+start-all.sh
+
+# for testing purposes
+run-wordcount.sh
+
+exit
+sudo docker stop hadoop-master hadoop-slave1 hadoop-slave2
