@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -128,8 +127,17 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-####
+# macOS
 .DS_Store
 */.DS_Store
+
+# Dataset
 python-generate-3-sized-datasets_new/
+*/articles/
+*/image/
+*/video/
+*.dat
+
+# PyCharm & IntelliJ
 .idea/
+
