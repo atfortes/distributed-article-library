@@ -78,8 +78,6 @@ sh.addTagRange(
   { "uid" : MaxKey },
   "DBMS1"
 )
-
-
 sh.shardCollection("demo.user_hong_kong", {"uid": 1})
 sh.addTagRange(
   "demo.user_hong_kong",
@@ -96,7 +94,6 @@ sh.addTagRange(
   { "aid" : MaxKey },
   "DBMS12"
 )
-
 sh.shardCollection("demo.article_tech", {"aid": 1})
 sh.addTagRange(
   "demo.article_tech",
@@ -113,7 +110,6 @@ sh.addTagRange(
   { "id" : MaxKey },
   "DBMS1"
 )
-
 sh.shardCollection("demo.read_hong_kong", {"id": 1})
 sh.addTagRange(
   "demo.read_hong_kong",
@@ -123,21 +119,44 @@ sh.addTagRange(
 )
 
 
-sh.shardCollection("demo.be_read_science", {"aid": 1})
+sh.shardCollection("demo.be_read_science", {"brid": 1})
 sh.addTagRange(
   "demo.be_read_science",
-  { "aid" : MinKey },
-  { "aid" : MaxKey },
+  { "brid" : MinKey },
+  { "brid" : MaxKey },
   "DBMS12"
 )
-
-sh.shardCollection("demo.be_read_tech", {"aid": 1})
+sh.shardCollection("demo.be_read_tech", {"brid": 1})
 sh.addTagRange(
   "demo.be_read_tech",
-  { "aid" : MinKey },
-  { "aid" : MaxKey },
+  { "brid" : MinKey },
+  { "brid" : MaxKey },
   "DBMS2"
 )
+
+
+sh.shardCollection("demo.popular_rank_daily", {"prid": 1})
+sh.addTagRange(
+  "demo.popular_rank_daily",
+  { "prid" : MinKey },
+  { "prid" : MaxKey },
+  "DBMS1"
+)
+sh.shardCollection("demo.popular_rank_weekly", {"prid": 1})
+sh.addTagRange(
+  "demo.popular_rank_weekly",
+  { "prid" : MinKey },
+  { "prid" : MaxKey },
+  "DBMS2"
+)
+sh.shardCollection("demo.popular_rank_monthly", {"prid": 1})
+sh.addTagRange(
+  "demo.popular_rank_monthly",
+  { "prid" : MinKey },
+  { "prid" : MaxKey },
+  "DBMS2"
+)
+
 
 
 docker-compose -f configsvrs/docker-compose.yml down -v

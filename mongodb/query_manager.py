@@ -29,6 +29,11 @@ class QueryManager:
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
+    def query_popular_rank(self, query={}, field={}):
+        cols = list(PopularRank.popular_rank().values())
+        return list(cols[0].find(query, field)) + list(cols[1].find(query, field)) + list(cols[2].find(query, field))
+
+    @classmethod
     def query_join_read_user(self, query={}, field={}):
         cols = list(Read.read().values())
         read_res = list(cols[0].find(query, field)) + list(cols[1].find(query, field))

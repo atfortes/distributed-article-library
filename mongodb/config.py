@@ -4,6 +4,7 @@ from user import *
 from article import *
 from read import *
 from be_read import *
+from popular_rank import *
 import numpy as np
 import json
 
@@ -76,6 +77,7 @@ class MongoInit:
             Read.bulk_write({'Beijing': list(np.array(bulk_list)[beijing_index]),
                              'Hong Kong': list(np.array(bulk_list)[hk_index])})
         self.init_be_read()
+        self.init_popular_rank()
         read_file.close()
 
 
@@ -97,7 +99,7 @@ class MongoInit:
             bulk_aids += [aid]
             doc = {
                 'id': f'br{aid}',
-                'timestamp': Collection.get_current_timestamp(),
+                'timestamp': str(Collection.get_current_timestamp()),
                 'aid': aid,
                 'readNum': read_num[aid],
                 'readUidList': read_list[aid],
@@ -136,12 +138,45 @@ class MongoInit:
         out_list = dict(map(lambda x: (x[0], list(set(x[1]))), out_dict.items()))
         return out_num, out_list
 
+    def init_popular_rank(self):
+        print('Initializing popular-rank collection...\n')
+        res = QueryManager.query_read({}, {'timestamp': 1, 'aid': 1})
+        time_reads = {'daily': {}, 'weekly': {}, 'monthly': {}}
+        for read in res:
+            aid = read['aid']
+            t = ReadTime(read['timestamp'])
+            if not aid in time_reads['daily']:
+                time_reads['daily'][aid] = {}
+                time_reads['weekly'][aid] = {}
+                time_reads['monthly'][aid] = {}
+            for g in time_reads.keys():
+                if not t.read_timestamp[g] in time_reads[g][aid]:
+                    time_reads[g][aid][t.read_timestamp[g]] = 1
+                else:
+                    time_reads[g][aid][t.read_timestamp[g]] += 1
+
+        insert_dict = {}
+        for g in time_reads.keys():
+            for aid in time_reads[g]:
+                time_reads[g][aid] = max(time_reads[g][aid].items(), key=lambda x: x[1])[1]
+            time_reads[g] = list(map(lambda x: x[0], sorted(time_reads[g].items(), key=lambda x: x[1], reverse=True)))
+            id = len(QueryManager.query_popular_rank())
+            doc = {
+                'id': f'pr{id}',
+                'timestamp': str(Collection.get_current_timestamp()),
+                'temporalGranularity': g,
+                'articleAidList': time_reads[g]
+            }
+            insert_dict[g] = [InsertOne(doc)]
+        PopularRank.write(insert_dict)
+
+
+
 
     def init_all(self):
         self.init_user()
         self.init_article()
         self.init_read()
-
 
 if __name__ == '__main__':
     init = MongoInit()
