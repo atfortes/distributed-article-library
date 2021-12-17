@@ -1,4 +1,4 @@
-from collection import *
+from mongodb.collection import *
 
 
 class User(Collection):

@@ -1,10 +1,10 @@
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
-from query_manager import *
-from user import *
-from article import *
-from read import *
-from be_read import *
-from popular_rank import *
+from mongodb.query_manager import *
+from mongodb.user import *
+from mongodb.article import *
+from mongodb.read import *
+from mongodb.be_read import *
+from mongodb.popular_rank import *
 import numpy as np
 import json
 
@@ -169,9 +169,6 @@ class MongoInit:
             }
             insert_dict[g] = [InsertOne(doc)]
         PopularRank.write(insert_dict)
-
-
-
 
     def init_all(self):
         self.init_user()

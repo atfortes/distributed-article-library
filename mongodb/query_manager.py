@@ -1,4 +1,4 @@
-from config import *
+from mongodb.config import *
 
 
 class QueryManager:
