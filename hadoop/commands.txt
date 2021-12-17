@@ -1,3 +1,7 @@
+# copy articles to inside the build context if not there yet
+mkdir articles
+cp ../data-generation/articles/* articles/
+
 # build image if not built yet
 sudo ./build-image.sh
 
@@ -10,5 +14,9 @@ start-all.sh
 # for testing purposes
 run-wordcount.sh
 
+# insert articles in hdfs dfs
+load-articles.sh
+
 exit
+
 sudo docker stop hadoop-master hadoop-slave1 hadoop-slave2

@@ -30,4 +30,3 @@ hdfs dfs -cat input/file3.txt
 # print the output of wordcount
 echo -e "\nwordcount output:"
 hdfs dfs -cat output/part-r-00000
-

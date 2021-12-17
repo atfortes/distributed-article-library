@@ -26,6 +26,8 @@ RUN mkdir -p $HADOOP_HOME/namenode && \
 
 COPY config/* /tmp/
 
+COPY articles/ /tmp/articles/
+
 RUN mv /tmp/hadoop-env.sh $HADOOP_HOME/etc/hadoop/hadoop-env.sh && \
     mv /tmp/yarn-env.sh $HADOOP_HOME/etc/hadoop/yarn-env.sh && \
     mv /tmp/hdfs-site.xml $HADOOP_HOME/etc/hadoop/hdfs-site.xml && \ 
@@ -37,7 +39,9 @@ RUN mv /tmp/hadoop-env.sh $HADOOP_HOME/etc/hadoop/hadoop-env.sh && \
     mv /tmp/start-yarn.sh $HADOOP_HOME/sbin/start-yarn.sh && \
     mv /tmp/stop-dfs.sh $HADOOP_HOME/sbin/stop-dfs.sh && \
     mv /tmp/stop-yarn.sh $HADOOP_HOME/sbin/stop-yarn.sh && \
-    mv /tmp/run-wordcount.sh $HADOOP_HOME/sbin/run-wordcount.sh
+    mv /tmp/run-wordcount.sh $HADOOP_HOME/sbin/run-wordcount.sh && \
+    mv /tmp/load-articles.sh $HADOOP_HOME/sbin/load-articles.sh && \
+    mv /tmp/articles/ ~/articles/
 
 # format namenode
 RUN $HADOOP_HOME/bin/hdfs namenode -format
