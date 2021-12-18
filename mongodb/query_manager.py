@@ -16,7 +16,6 @@ class QueryManager:
             else:
                 uids = [uid]
             res_cache, non_pos_cache, pos_cache = cache.get_musers(uids)
-            print(res_cache)
             if non_pos_cache.shape[0]:
                 uids = list(np.array(uids)[non_pos_cache])
                 query['uid'] = {'$in': uids}
@@ -154,7 +153,3 @@ class QueryManager:
         for user in user_res:
             user['reads'] = read_uid[user['uid']]
         return user_res
-
-
-if __name__ == '__main__':
-    print(QueryManager.query_read({'id': 'r2'}))
