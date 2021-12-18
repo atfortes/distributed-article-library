@@ -29,4 +29,8 @@
         <name>dfs.datanode.data.dir</name>
         <value>/usr/local/hadoop-3.2.1/datanode/</value>
     </property>
+    <property>
+        <name>dfs.webhdfs.enabled</name>
+        <value>true</value>
+    </property>
 </configuration>
