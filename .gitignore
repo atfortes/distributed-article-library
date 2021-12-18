@@ -133,7 +133,7 @@ dmypy.json
 
 # Dataset
 python-generate-3-sized-datasets_new/
-*/articles/
+data-generation/articles/
 */image/
 */video/
 *.dat
@@ -141,6 +141,6 @@ python-generate-3-sized-datasets_new/
 # PyCharm & IntelliJ
 .idea/
 
-#redis
-redis/redis-data/
-redis/redis.conf/
+#redis_cache
+redis_cache/redis-data/
+redis_cache/redis.conf/

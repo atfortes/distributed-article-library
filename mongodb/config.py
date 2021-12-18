@@ -60,7 +60,7 @@ class MongoInit:
             uids += [doc['uid']]
             bulk_list += [InsertOne(doc)]
             if bulk_counter == self.bulk_size_read:
-                regions = QueryManager.query_user({'uid': {'$in': uids}}, {'uid': 1, 'region': 1})
+                regions = QueryManager.query_user({'uid': {'$in': uids}}, {'uid': 1, 'region': 1}, cache=False)
                 regions = dict(map(lambda x: (x['uid'], x['region']), regions))
                 regions = list(map(lambda x: regions[x], uids))
                 beijing_index = np.argwhere(np.array(regions) == 'Beijing').reshape(-1)
@@ -69,7 +69,7 @@ class MongoInit:
                                  'Hong Kong': list(np.array(bulk_list)[hk_index])})
                 bulk_counter, bulk_list, uids = 0, [], []
         if bulk_counter > 0:
-            regions = QueryManager.query_user({'uid': {'$in': uids}}, {'uid': 1, 'region': 1})
+            regions = QueryManager.query_user({'uid': {'$in': uids}}, {'uid': 1, 'region': 1}, cache=False)
             regions = dict(map(lambda x: (x['uid'], x['region']), regions))
             regions = list(map(lambda x: regions[x], uids))
             beijing_index = np.argwhere(np.array(regions) == 'Beijing').reshape(-1)
@@ -83,15 +83,15 @@ class MongoInit:
     def init_be_read(self):
         print('Initializing be-read collection...\n')
         bulk_counter, bulk_list, bulk_aids = 0, [], []
-        aids = QueryManager.query_article({}, {'aid': 1})
+        aids = QueryManager.query_article({}, {'aid': 1}, cache=False)
         aids = set(map(lambda x: x['aid'], aids))
-        res = QueryManager.query_read({'aid': {'$in': list(aids)}}, {'aid': 1, 'uid': 1})
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}}, {'aid': 1, 'uid': 1}, cache=False)
         read_num, read_list = self.iterate_query_be_read(res)
-        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "commentOrNot": '1'}, {'aid': 1, 'uid': 1})
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "commentOrNot": '1'}, {'aid': 1, 'uid': 1}, cache=False)
         comment_num, comment_list = self.iterate_query_be_read(res)
-        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "agreeOrNot": '1'}, {'aid': 1, 'uid': 1})
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "agreeOrNot": '1'}, {'aid': 1, 'uid': 1}, cache=False)
         agree_num, agree_list = self.iterate_query_be_read(res)
-        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "shareOrNot": '1'}, {'aid': 1, 'uid': 1})
+        res = QueryManager.query_read({'aid': {'$in': list(aids)}, "shareOrNot": '1'}, {'aid': 1, 'uid': 1}, cache=False)
         share_num, share_list = self.iterate_query_be_read(res)
         for aid in aids:
             bulk_counter += 1
@@ -111,7 +111,7 @@ class MongoInit:
             }
             bulk_list += [InsertOne(doc)]
             if bulk_counter == self.bulk_size:
-                categories = QueryManager.query_article({'aid': {'$in': bulk_aids}}, {'category': 1})
+                categories = QueryManager.query_article({'aid': {'$in': bulk_aids}}, {'category': 1}, cache=False)
                 categories = list(map(lambda x: x['category'], categories))
                 science_index = np.argwhere(np.array(categories) == 'science').reshape(-1)
                 tech_index = np.argwhere(np.array(categories) == 'technology').reshape(-1)
@@ -119,7 +119,7 @@ class MongoInit:
                                    'technology': list(np.array(bulk_list)[tech_index])})
                 bulk_counter, bulk_list, bulk_aids = 0, [], []
         if bulk_counter > 0:
-            categories = QueryManager.query_article({'aid': {'$in': bulk_aids}}, {'category': 1})
+            categories = QueryManager.query_article({'aid': {'$in': bulk_aids}}, {'category': 1}, cache=False)
             categories = list(map(lambda x: x['category'], categories))
             science_index = np.argwhere(np.array(categories) == 'science').reshape(-1)
             tech_index = np.argwhere(np.array(categories) == 'technology').reshape(-1)
