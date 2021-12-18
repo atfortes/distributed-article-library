@@ -80,7 +80,6 @@ class MongoInit:
         self.init_popular_rank()
         read_file.close()
 
-
     def init_be_read(self):
         print('Initializing be-read collection...\n')
         bulk_counter, bulk_list, bulk_aids = 0, [], []
@@ -175,7 +174,7 @@ class MongoInit:
         self.init_article()
         self.init_read()
 
+
 if __name__ == '__main__':
     init = MongoInit()
     init.init_all()
-

@@ -4,8 +4,7 @@ docker ps
 docker-compose -f configsvrs/docker-compose.yml ps
 
 docker-compose -f configsvrs/docker-compose.yml up -d
-
-mongo mongodb://localhost:40001
+mongo mongodb://192.168.1.2:40001
 
 rs.initiate(
   {
@@ -18,11 +17,8 @@ rs.initiate(
   }
 )
 
-rs.status()
-
 
 docker-compose -f shards/docker-compose.yml up -d
-
 mongo mongodb://localhost:50001
 
 rs.initiate(

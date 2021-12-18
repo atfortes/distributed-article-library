@@ -141,3 +141,6 @@ python-generate-3-sized-datasets_new/
 # PyCharm & IntelliJ
 .idea/
 
+#redis
+redis/redis-data/
+redis/redis.conf/
