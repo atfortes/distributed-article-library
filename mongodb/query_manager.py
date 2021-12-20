@@ -1,35 +1,129 @@
+import numpy as np
+
 from mongodb.config import *
+from redis_cache.redis_utils import *
 
 
 class QueryManager:
     @classmethod
-    def query_user(self, query={}, field={}):
+    def query_user(self, query={}, field={}, cache=True):
+        res_cache, res_db = [], []
+        if 'uid' in query and cache == True:
+            cache = Cache()
+            uid = query['uid']
+            if isinstance(uid, dict):
+                uids = uid['$in']
+            else:
+                uids = [uid]
+            res_cache, non_pos_cache, pos_cache = cache.get_musers(uids)
+            if non_pos_cache.shape[0]:
+                uids = list(np.array(uids)[non_pos_cache])
+                query['uid'] = {'$in': uids}
+                cols = list(User.user().values())
+                res_db = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
+                if len(uids) != len(res_db):
+                    return res_db
+                cache.set_musers(uids, res_db)
+            return list(np.array(res_cache)[pos_cache]) + res_db
+
         cols = list(User.user().values())
-        return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
+        return list(cols[0].find(query, field)) + list(cols[1].find(query, field)) + res_cache
 
     @classmethod
-    def query_one_user(self, query={}, field={}):
-        cols = list(User.user().values())
-        result = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
-        return result[0]
+    def query_article(self, query={}, field={}, cache=True):
+        res_cache, res_db = [], []
+        if 'aid' in query and cache == True:
+            cache = Cache()
+            aid = query['aid']
+            if isinstance(aid, dict):
+                aids = aid['$in']
+            else:
+                aids = [aid]
+            res_cache, non_pos_cache, pos_cache = cache.get_marticles(aids)
+            if non_pos_cache.shape[0]:
+                aids = list(np.array(aids)[non_pos_cache])
+                query['aid'] = {'$in': aids}
+                cols = list(Article.article().values())
+                res_db = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
+                if len(aids) != len(res_db):
+                    return res_db
+                cache.set_marticles(aids, res_db)
+            return list(np.array(res_cache)[pos_cache]) + res_db
 
-    @classmethod
-    def query_article(self, query={}, field={}):
         cols = list(Article.article().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
-    def query_read(self, query={}, field={}):
+    def query_read(self, query={}, field={}, cache=True):
+        res_cache, res_db = [], []
+        if 'id' in query and cache == True:
+            cache = Cache()
+            id = query['id']
+            if isinstance(id, dict):
+                ids = id['$in']
+            else:
+                ids = [id]
+            res_cache, non_pos_cache, pos_cache = cache.get_mreads(ids)
+            if non_pos_cache.shape[0]:
+                ids = list(np.array(ids)[non_pos_cache])
+                query['id'] = {'$in': ids}
+                cols = list(Read.read().values())
+                res_db = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
+                if len(ids) != len(res_db):
+                    return res_db
+                cache.set_mreads(ids, res_db)
+            return list(np.array(res_cache)[pos_cache]) + res_db
+
         cols = list(Read.read().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
-    def query_be_read(self, query={}, field={}):
+    def query_be_read(self, query={}, field={}, cache=True):
+        res_cache, res_db = [], []
+        if 'id' in query and cache == True:
+            cache = Cache()
+            id = query['id']
+            if isinstance(id, dict):
+                ids = id['$in']
+            else:
+                ids = [id]
+            res_cache, non_pos_cache, pos_cache = cache.get_mreads(ids)
+            if non_pos_cache.shape[0]:
+                ids = list(np.array(ids)[non_pos_cache])
+                query['id'] = {'$in': ids}
+                cols = list(BeRead.be_read().values())
+                res_db = list(cols[0].find(query, field)) + list(cols[1].find(query, field))
+                if len(ids) != len(res_db):
+                    return res_db
+                cache.set_mreads(ids, res_db)
+            return list(np.array(res_cache)[pos_cache]) + res_db
+
         cols = list(BeRead.be_read().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field))
 
     @classmethod
-    def query_popular_rank(self, query={}, field={}):
+    def query_popular_rank(self, query={}, field={}, cache=True):
+        res_cache, res_db = [], []
+        if 'id' in query and cache == True:
+            cache = Cache()
+            id = query['id']
+            if isinstance(id, dict):
+                ids = id['$in']
+            else:
+                ids = [id]
+            res_cache, non_pos_cache, pos_cache = cache.get_mreads(ids)
+            if non_pos_cache.shape[0]:
+                ids = list(np.array(ids)[non_pos_cache])
+                query['id'] = {'$in': ids}
+                cols = list(PopularRank.popular_rank().values())
+                res_db = list(cols[0].find(query, field)) \
+                         + list(cols[1].find(query, field)) \
+                         + list(cols[2].find(query, field))
+                if len(ids) != len(res_db):
+                    return res_db
+                cache.set_mreads(ids, res_db)
+            return list(np.array(res_cache)[pos_cache]) + res_db
+
         cols = list(PopularRank.popular_rank().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field)) + list(cols[2].find(query, field))
 
