@@ -9,5 +9,7 @@ class Article(Collection):
 
     @classmethod
     def bulk_write(cls, bulk_dict):
-        Article.article()['science'].bulk_write(bulk_dict['science'], ordered=True)
-        Article.article()['technology'].bulk_write(bulk_dict['technology'], ordered=True)
+        if bulk_dict['science']:
+            Article.article()['science'].bulk_write(bulk_dict['science'], ordered=True)
+        if bulk_dict['technology']:
+            Article.article()['technology'].bulk_write(bulk_dict['technology'], ordered=True)

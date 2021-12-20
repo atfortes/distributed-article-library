@@ -9,5 +9,7 @@ class BeRead(Collection):
 
     @classmethod
     def bulk_write(cls, bulk_dict):
-        BeRead.be_read()['science'].bulk_write(bulk_dict['science'], ordered=True)
-        BeRead.be_read()['technology'].bulk_write(bulk_dict['technology'], ordered=True)
+        if bulk_dict['science']:
+            BeRead.be_read()['science'].bulk_write(bulk_dict['science'], ordered=True)
+        if bulk_dict['technology']:
+            BeRead.be_read()['technology'].bulk_write(bulk_dict['technology'], ordered=True)

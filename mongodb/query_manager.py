@@ -1,4 +1,4 @@
-import numpy as np
+import json
 
 from mongodb.config import *
 from redis_cache.redis_utils import *
@@ -28,6 +28,12 @@ class QueryManager:
 
         cols = list(User.user().values())
         return list(cols[0].find(query, field)) + list(cols[1].find(query, field)) + res_cache
+
+    @classmethod
+    def insert_user(self, user_dict):
+        insert_dict = {'Beijing': [], 'Hong Kong': []}
+        insert_dict[user_dict['region']] = [InsertOne(user_dict)]
+        User.bulk_write(insert_dict)
 
     @classmethod
     def query_article(self, query={}, field={}, cache=True):

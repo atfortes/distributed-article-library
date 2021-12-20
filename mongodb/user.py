@@ -9,5 +9,7 @@ class User(Collection):
 
     @classmethod
     def bulk_write(cls, bulk_dict):
-        User.user()['Beijing'].bulk_write(bulk_dict['Beijing'], ordered=True)
-        User.user()['Hong Kong'].bulk_write(bulk_dict['Hong Kong'], ordered=True)
+        if bulk_dict['Beijing']:
+            User.user()['Beijing'].bulk_write(bulk_dict['Beijing'], ordered=True)
+        if bulk_dict['Hong Kong']:
+            User.user()['Hong Kong'].bulk_write(bulk_dict['Hong Kong'], ordered=True)
