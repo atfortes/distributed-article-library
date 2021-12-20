@@ -1,5 +1,3 @@
-import json
-
 from mongodb.config import *
 from redis_cache.redis_utils import *
 
@@ -34,6 +32,13 @@ class QueryManager:
         insert_dict = {'Beijing': [], 'Hong Kong': []}
         insert_dict[user_dict['region']] = [InsertOne(user_dict)]
         User.bulk_write(insert_dict)
+
+    @classmethod
+    def delete_user(self, user_dict):
+        cache = Cache()
+        cache.delete_user(user_dict['uid'])
+        delete_dict = {'Beijing': [DeleteOne(user_dict)], 'Hong Kong': [DeleteOne(user_dict)]}
+        User.delete(delete_dict)
 
     @classmethod
     def query_article(self, query={}, field={}, cache=True):

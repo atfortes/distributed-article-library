@@ -25,6 +25,8 @@ class ArticleApp(tk.Tk):
             StartPage,
             UserPage,
             CreateUserPage,
+            EditUserPage,
+            DeleteUserPage,
             ArticlePage,
             ReadPage
         )
@@ -74,6 +76,26 @@ class ArticleApp(tk.Tk):
             'preferTags': tkVars[10],
             'obtainedCredits': tkVars[11]
         })
+
+    def delete_user(self, uid):
+        QueryManager.delete_user({'uid': uid.get()})
+
+    def fetch_article(self, aid, list, found_label):
+        list.delete(0, tk.END)
+        if aid.get() == '':
+            query_id = {}
+        else:
+            aids = aid.get().split(',')
+            query_id = {'aid': {'$in': aids}}
+        res = QueryManager.query_article(query_id)
+
+        if len(res) == 1:
+            found_label['text'] = f'Found 1 result.'
+        else:
+            found_label['text'] = f'Found {len(res)} results.'
+
+        for i in sorted(res, key=lambda x: int(x['aid'])):
+            list.insert(tk.END, f'Article ID: {i["aid"]}, Title: {i["title"]}, Category: {i["category"]}, Authors: {i["authors"]}')
 
 
 class StartPage(tk.Frame):
@@ -128,16 +150,16 @@ class UserPage(tk.Frame):
         buttons = tk.Frame(self)
         buttons.pack(pady=10)
 
-        create_user_button = tk.Button(buttons, text="Create user",
+        create_user_button = tk.Button(buttons, text="Create User",
                            command=lambda: controller.show_frame(CreateUserPage))
         create_user_button.pack(side=tk.LEFT)
 
-        edit_user_button = tk.Button(buttons, text="Edit user",
-                            command=lambda: controller.show_frame(ArticlePage))
+        edit_user_button = tk.Button(buttons, text="Edit User",
+                            command=lambda: controller.show_frame(EditUserPage))
         edit_user_button.pack(side=tk.LEFT)
 
-        delete_user_button = tk.Button(buttons, text="Delete user",
-                            command=lambda: controller.show_frame(ArticlePage))
+        delete_user_button = tk.Button(buttons, text="Delete User",
+                            command=lambda: controller.show_frame(DeleteUserPage))
         delete_user_button.pack(side=tk.LEFT)
 
         back_button = tk.Button(self, text="Back to Home",
@@ -249,14 +271,175 @@ class CreateUserPage(tk.Frame):
         user_entry = tk.Entry(frame, textvariable=credits)
         user_entry.pack(side=tk.RIGHT)
 
-        user_submit = tk.Button(self, text='Submit',
+        user_submit = tk.Button(self, text='Create User',
                                 command=lambda: controller.create_user(list(map(lambda x: x.get(), tkVars))),
                                 pady=5, padx=20)
         user_submit.pack()
 
-        button1 = tk.Button(self, text="Back to Home",
+        back_buttons = tk.Frame(self)
+        back_buttons.pack(pady=10)
+
+        back = tk.Button(back_buttons, text="Back",
+                            command=lambda: controller.show_frame(UserPage))
+        back.pack(side=tk.LEFT)
+
+        button1 = tk.Button(back_buttons, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        button1.pack()
+        button1.pack(side=tk.LEFT)
+
+
+class EditUserPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Edit User", font=LARGE_FONT, fg='blue')
+        label.pack(pady=10, padx=10)
+
+        tkVars = {}
+
+        frame = tk.Frame(self)
+        frame.pack()
+        user_label = tk.Label(frame, text='User ID', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        uid = tk.StringVar()
+        tkVars['uid'] = uid
+        user_entry = tk.Entry(frame, textvariable=uid)
+        user_entry.pack(side=tk.LEFT)
+
+        user_label = tk.Label(frame, text='Name', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        name= tk.StringVar()
+        tkVars['name']  = name
+        user_entry = tk.Entry(frame, textvariable=name)
+        user_entry.pack(side=tk.RIGHT)
+
+        frame = tk.Frame(self)
+        frame.pack()
+        user_label = tk.Label(frame, text='Gender', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        gender = tk.StringVar()
+        tkVars['gender'] = gender
+        user_entry = tk.Entry(frame, textvariable=gender)
+        user_entry.pack(side=tk.LEFT)
+
+        user_label = tk.Label(frame, text='Email', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        email = tk.StringVar()
+        tkVars['email'] = email
+        user_entry = tk.Entry(frame, textvariable=email)
+        user_entry.pack(side=tk.RIGHT)
+
+        frame = tk.Frame(self)
+        frame.pack()
+        user_label = tk.Label(frame, text='Phone', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        phone = tk.StringVar()
+        tkVars['phone'] = phone
+        user_entry = tk.Entry(frame, textvariable=phone)
+        user_entry.pack(side=tk.LEFT)
+
+        user_label = tk.Label(frame, text='Department', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        dept = tk.StringVar()
+        tkVars['dept'] = dept
+        user_entry = tk.Entry(frame, textvariable=dept)
+        user_entry.pack(side=tk.RIGHT)
+
+        frame = tk.Frame(self)
+        frame.pack()
+        user_label = tk.Label(frame, text='Grade', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        grade = tk.StringVar()
+        tkVars['grade'] = grade
+        user_entry = tk.Entry(frame, textvariable=grade)
+        user_entry.pack(side=tk.LEFT)
+
+        user_label = tk.Label(frame, text='Language', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        language = tk.StringVar()
+        tkVars['language'] = language
+        user_entry = tk.Entry(frame, textvariable=language)
+        user_entry.pack(side=tk.RIGHT)
+
+        frame = tk.Frame(self)
+        frame.pack()
+        user_label = tk.Label(frame, text='Region', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        region = tk.StringVar()
+        tkVars['region'] = region
+        user_entry = tk.Entry(frame, textvariable=region)
+        user_entry.pack(side=tk.LEFT)
+
+        user_label = tk.Label(frame, text='Role', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        role = tk.StringVar()
+        tkVars['role'] = role
+        user_entry = tk.Entry(frame, textvariable=role)
+        user_entry.pack(side=tk.RIGHT)
+
+        frame = tk.Frame(self)
+        frame.pack()
+        user_label = tk.Label(frame, text='Tags', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        tags = tk.StringVar()
+        tkVars['tags'] = tags
+        user_entry = tk.Entry(frame, textvariable=tags)
+        user_entry.pack(side=tk.LEFT)
+
+        user_label = tk.Label(frame, text='Credits', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+        credits = tk.StringVar()
+        tkVars['credits'] = credits
+        user_entry = tk.Entry(frame, textvariable=credits)
+        user_entry.pack(side=tk.RIGHT)
+
+        user_submit = tk.Button(self, text='Edit User',
+                                command=lambda: print(dict(map(lambda x: (x[0], x[1].get()), tkVars.items()))),
+                                pady=5, padx=20)
+        user_submit.pack()
+
+        back_buttons = tk.Frame(self)
+        back_buttons.pack(pady=10)
+
+        back = tk.Button(back_buttons, text="Back",
+                            command=lambda: controller.show_frame(UserPage))
+        back.pack(side=tk.LEFT)
+
+        button1 = tk.Button(back_buttons, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack(side=tk.LEFT)
+
+
+class DeleteUserPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Delete User", font=LARGE_FONT, fg='blue')
+        label.pack(pady=10, padx=10)
+
+        top_frame = tk.Frame(self)
+        top_frame.pack()
+
+        user_label = tk.Label(top_frame, text='User ID', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+
+        user_text = tk.StringVar()
+        user_entry = tk.Entry(top_frame, textvariable=user_text)
+        user_entry.pack(side=tk.LEFT)
+
+        user_submit = tk.Button(top_frame, text='Delete',
+                                command=lambda: controller.delete_user(user_text),
+                                pady=5, padx=20)
+        user_submit.pack(side=tk.LEFT)
+
+        back_buttons = tk.Frame(self)
+        back_buttons.pack(pady=10)
+
+        back = tk.Button(back_buttons, text="Back",
+                            command=lambda: controller.show_frame(UserPage))
+        back.pack(side=tk.LEFT)
+
+        button1 = tk.Button(back_buttons, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack(side=tk.LEFT)
 
 
 class ArticlePage(tk.Frame):
@@ -265,13 +448,37 @@ class ArticlePage(tk.Frame):
         label = tk.Label(self, text="Articles", font=LARGE_FONT, fg='blue')
         label.pack(pady=10, padx=10)
 
-        button1 = tk.Button(self, text="Back to Home",
-                            command=lambda: controller.show_frame(StartPage))
-        button1.pack()
+        top_frame = tk.Frame(self)
+        top_frame.pack()
 
-        button2 = tk.Button(self, text="Page One",
-                            command=lambda: controller.show_frame(UserPage), font=MEDIUM_FONT)
-        button2.pack()
+        user_label = tk.Label(top_frame, text='Article ID', font=('bold', 14), pady=20, padx=20)
+        user_label.pack(side=tk.LEFT)
+
+        article_text = tk.StringVar()
+        article_entry = tk.Entry(top_frame, textvariable=article_text)
+        article_entry.pack(side=tk.LEFT)
+
+        user_submit = tk.Button(top_frame, text='Submit',
+                                command=lambda: controller.fetch_article(article_text, result_list, found_label),
+                                pady=5, padx=20)
+        user_submit.pack(side=tk.LEFT)
+
+        found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
+        found_label.pack()
+
+        result_list = tk.Listbox(self, height=8, width=50)
+        result_list.pack()
+
+        buttons = tk.Frame(self)
+        buttons.pack(pady=10)
+
+        edit_user_button = tk.Button(buttons, text="Read article",
+                                     command=lambda: controller.show_frame(ArticlePage))
+        edit_user_button.pack()
+
+        back_button = tk.Button(self, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        back_button.pack(side=tk.BOTTOM, pady=30)
 
 
 class ReadPage(tk.Frame):

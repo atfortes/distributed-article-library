@@ -1,4 +1,4 @@
-from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
+from pymongo import InsertOne, DeleteOne, ReplaceOne, UpdateOne
 from mongodb.query_manager import *
 from mongodb.user import *
 from mongodb.article import *

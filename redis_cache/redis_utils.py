@@ -20,6 +20,9 @@ class Cache:
         parsed_jsons = list(map(lambda x: json_util.dumps(x), jsons))
         self.conn.mset(dict(zip(parsed_uids, parsed_jsons)))
 
+    def delete_user(self, uid):
+        self.conn.delete(f'user_{uid}')
+
     def get_marticles(self, aids):
         parsed_aids = list(map(lambda x: f'article_{x}', aids))
         cache_res = self.conn.mget(parsed_aids)
