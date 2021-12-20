@@ -9,13 +9,11 @@ class HadoopManager:
 
     def __init__(self, HOST: str, PORT: str, user_name='root') -> None:
         self.client = pyhdfs.HdfsClient(hosts=[
-            f'{HOST}:{PORT}',
-            f'{HOST}:{9866}',
-            f'{HOST}:{9864}'
+            f'{HOST}:{PORT}'
             ], user_name=user_name)
 
     def exists(self, path: str) -> bool:
-        return self.client.exists(ARTICLES_PATH + path)
+        return self.client.exists(path)
 
     def list_status(self, path) -> list:
         return self.client.list_status(ARTICLES_PATH + path)
@@ -63,4 +61,5 @@ class HadoopManager:
 
 if __name__ == "__main__":
     hdfs = HadoopManager(HOST, PORT)
-    print(hdfs.read_file('article0', 'text_a0.txt'))
+    with hdfs.client.open('/user/root/articles/article0/image_a0_0.jpg') as f:
+        print(f.read())
