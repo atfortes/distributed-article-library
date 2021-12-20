@@ -12,30 +12,55 @@ class HadoopManager:
             f'{HOST}:{PORT}'
             ], user_name=user_name)
 
+    # general monitoring methods
+
     def exists(self, path: str) -> bool:
-        return self.client.exists(path)
+        return self.client.exists(ARTICLES_PATH + path)
 
     def list_status(self, path) -> list:
-        return self.client.list_status(ARTICLES_PATH + path)
+        try:
+            return self.client.list_status(ARTICLES_PATH + path)
+        except pyhdfs.HdfsFileNotFoundException as e:
+            print(e)
 
     def content_summary(self, path):
-        return self.client.get_content_summary(ARTICLES_PATH + path)
+        try:
+            return self.client.get_content_summary(ARTICLES_PATH + path)
+        except pyhdfs.HdfsFileNotFoundException as e:
+            print(e)
+
+    # individual file managing methods
 
     def read_file(self, article, file_name) -> bytes:
-        with self.client.open(ARTICLES_PATH + article + '/' + file_name) as f:
-            print(f)
-
-    def create_file(self, article: str, file_name: str, data: bytes) -> None:
-        self.client.create(ARTICLES_PATH + article + '/' + file_name, data)
-
-    def delete_file(self, article: str, file_name: str) -> None:
-        self.client.delete(ARTICLES_PATH + article + '/' + file_name)
+        try:
+            with self.client.open(ARTICLES_PATH + article + '/' + file_name) as f:
+                return f.read()
+        except pyhdfs.HdfsFileNotFoundException as e:
+            print(e)
 
     def upload_file(self, source_path: str, article: str, file_name: str) -> None:
-        self.client.copy_from_local(source_path, ARTICLES_PATH + article + '/' + file_name)
+        try:
+            self.client.copy_from_local(source_path, ARTICLES_PATH + article + '/' + file_name)
+        except pyhdfs.HdfsFileNotFoundException as e:
+            print('hdfs error:' + str(e))
+        except FileNotFoundError as e:
+            print('local error:' + str(e))
 
     def download_file(self, article: str, file_name: str, dest_path: str, ) -> None:
-        self.client.copy_to_local(ARTICLES_PATH + article + '/' + file_name, dest_path)
+        try:
+            self.client.copy_to_local(ARTICLES_PATH + article + '/' + file_name, dest_path)
+        except pyhdfs.HdfsFileNotFoundException as e:
+            print('hdfs error:' + str(e))
+        except FileNotFoundError as e:
+            print('local error:' + str(e))
+
+    def delete_file(self, article: str, file_name: str) -> None:
+        try:
+            self.client.delete(ARTICLES_PATH + article + '/' + file_name)
+        except pyhdfs.HdfsFileNotFoundException as e:
+            print(e)
+
+    # articles managing methods
 
     def list_article(self, article: str) -> list:
         return self.client.listdir(ARTICLES_PATH + article + '/')
@@ -47,19 +72,22 @@ class HadoopManager:
         return files
 
     def upload_article(self, source_path, article) -> None:
-        path = ARTICLES_PATH + article
-        if not self.exits(path):
-            self.client.mkdirs(path)
-            for source_file in os.listdir(source_path):
-                self.upload_file(source_file, article, source_file.split('/')[-1])
+        if self.exists(article):
+            self.delete_article(article)
+        else:
+            self.client.mkdirs(article)
+        for source_file in os.listdir(source_path):
+            self.upload_file(source_file, article, source_file.split('/')[-1])
+
+    def download_article(self, article, dest_path):
+        if os.path.isdir(dest_path):
+            os.rmdir(dest_path)
+        os.mkdir(dest_path)
+        files = self.list_article(article)
+        for file in files:
+            self.download_file(article, file, dest_path + file)
 
     def delete_article(self, article) -> None:
         files = self.list_article(article)
         for file in files:
             self.delete_file(article, file)
-
-
-if __name__ == "__main__":
-    hdfs = HadoopManager(HOST, PORT)
-    with hdfs.client.open('/user/root/articles/article0/image_a0_0.jpg') as f:
-        print(f.read())
