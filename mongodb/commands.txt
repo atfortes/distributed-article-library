@@ -4,15 +4,14 @@ docker ps
 docker-compose -f configsvrs/docker-compose.yml ps
 
 docker-compose -f configsvrs/docker-compose.yml up -d
-mongo mongodb://192.168.1.4:40001
-
+mongo mongodb://localhost:40001
 rs.initiate(
   {
     _id: "cfgrs",
     configsvr: true,
     members: [
-      { _id : 0, host : "192.168.1.4:40001" },
-      { _id : 1, host : "192.168.1.4:40002" }
+      { _id : 0, host : "192.168.1.2:40001" },
+      { _id : 1, host : "192.168.1.2:40002" }
     ]
   }
 )
@@ -20,46 +19,42 @@ rs.initiate(
 
 docker-compose -f shards/docker-compose.yml up -d
 mongo mongodb://localhost:50001
-
 rs.initiate(
   {
     _id : "shard0",
     members: [
-      { _id : 0, host : "192.168.1.4:50001" }
+      { _id : 0, host : "192.168.1.2:50001" }
     ]
   }
 )
 
 mongo mongodb://localhost:50002
-
 rs.initiate(
   {
     _id : "shardrep",
     members: [
-      { _id : 0, host : "192.168.1.4:50002" },
-      { _id : 1, host : "192.168.1.4:50003" }
+      { _id : 0, host : "192.168.1.2:50002" },
+      { _id : 1, host : "192.168.1.2:50003" }
     ]
   }
 )
 
 mongo mongodb://localhost:50004
-
 rs.initiate(
   {
     _id : "shard1",
     members: [
-      { _id : 1, host : "192.168.1.4:50004" }
+      { _id : 1, host : "192.168.1.2:50004" }
     ]
   }
 )
 
 docker-compose -f router/docker-compose.yml up -d
+mongo mongodb://localhost:60000
 
-    mongo mongodb://localhost:60000
-
-sh.addShard( "shard0/192.168.1.4:50001")
-sh.addShard( "shardrep/192.168.1.4:50002,192.168.1.4:50003")
-sh.addShard( "shard1/192.168.1.4:50004")
+sh.addShard( "shard0/192.168.1.2:50001")
+sh.addShard( "shardrep/192.168.1.2:50002,192.168.1.2:50003")
+sh.addShard( "shard1/192.168.1.2:50004")
 sh.addShardTag("shard0", "DBMS1")
 sh.addShardTag("shard1", "DBMS2")
 sh.addShardTag("shardrep", "DBMS12")

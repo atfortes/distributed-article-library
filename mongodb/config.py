@@ -107,7 +107,7 @@ class MongoInit:
                 'agreeNum': agree_num[aid],
                 'agreeUidList': agree_list[aid],
                 'shareNum': share_num[aid],
-                'shareUidList': share_list[aid],
+                'shareUidList': share_list[aid]
             }
             bulk_list += [InsertOne(doc)]
             if bulk_counter == self.bulk_size:

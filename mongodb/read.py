@@ -9,5 +9,7 @@ class Read(Collection):
 
     @classmethod
     def bulk_write(cls, bulk_dict):
-        Read.read()['Beijing'].bulk_write(list(bulk_dict['Beijing']), ordered=True)
-        Read.read()['Hong Kong'].bulk_write(list(bulk_dict['Hong Kong']), ordered=True)
+        if bulk_dict['Beijing']:
+            Read.read()['Beijing'].bulk_write(list(bulk_dict['Beijing']), ordered=True)
+        if bulk_dict['Hong Kong']:
+            Read.read()['Hong Kong'].bulk_write(list(bulk_dict['Hong Kong']), ordered=True)

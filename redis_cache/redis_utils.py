@@ -5,7 +5,7 @@ import redis
 
 class Cache:
     def __init__(self):
-        self.conn = redis.Redis(host='192.168.1.4', port=6379)
+        self.conn = redis.Redis(host='192.168.1.2', port=6379)
         self.conn.config_set('maxmemory', '100mb')
         self.conn.config_set('maxmemory-policy', 'allkeys-lru')
 
