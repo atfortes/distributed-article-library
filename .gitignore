@@ -136,6 +136,7 @@ python-generate-3-sized-datasets_new/
 data-generation/articles/
 */image/
 */video/
+*/articles/
 *.dat
 
 # PyCharm & IntelliJ
