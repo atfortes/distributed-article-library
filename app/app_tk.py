@@ -29,7 +29,11 @@ class ArticleApp(tk.Tk):
             DeleteUserPage,
             ArticlePage,
             ReadPage,
-            BeReadPage
+            BeReadPage,
+            PopularRankPage,
+            DailyRankPage,
+            WeeklyRankPage,
+            MonthlyRankPage
         )
 
         for F in self.pages:
@@ -87,12 +91,12 @@ class ArticleApp(tk.Tk):
     def delete_user(self, uid):
         QueryManager.delete_user({'uid': uid.get()})
 
-    def fetch_article(self, aid, tklist, found_label):
+    def fetch_article(self, aid, tklist, found_label, sort=True):
         tklist.delete(0, tk.END)
-        if aid.get() == '':
+        if aid == '':
             query_id = {}
         else:
-            aids = aid.get().split(',')
+            aids = aid.split(',')
             query_id = {'aid': {'$in': aids}}
         res = QueryManager.query_article(query_id)
 
@@ -100,9 +104,12 @@ class ArticleApp(tk.Tk):
             found_label['text'] = f'Found 1 result.'
         else:
             found_label['text'] = f'Found {len(res)} results.'
-
-        for i in sorted(res, key=lambda x: int(x['aid'])):
-            tklist.insert(tk.END, f'Article ID: {i["aid"]}, Title: {i["title"]}, Category: {i["category"]}, Authors: {i["authors"]}')
+        if sort:
+            for i in sorted(res, key=lambda x: int(x['aid'])):
+                tklist.insert(tk.END, f'Article ID: {i["aid"]}, Title: {i["title"]}, Category: {i["category"]}, Authors: {i["authors"]}')
+        else:
+            for i in res:
+                tklist.insert(tk.END, f'Article ID: {i["aid"]}, Title: {i["title"]}, Category: {i["category"]}, Authors: {i["authors"]}')
 
     def fetch_be_read(self, aid, tklist, found_label):
         tklist.delete(0, tk.END)
@@ -124,6 +131,27 @@ class ArticleApp(tk.Tk):
                                   f'Comment count: {i["commentNum"]}, '
                                   f'Agree count: {i["agreeNum"]}, '
                                   f'Share count: {i["shareNum"]}')
+
+    def fetch_daily_rank(self, day_text, top_text, tklist, found_label):
+        tklist.delete(0, tk.END)
+        day = DateToTimestamp.day_tmp(day_text.get())
+        res = QueryManager.query_popular_rank({'timestamp': day, 'temporalGranularity': 'daily'})
+        aids = res[0]['articleAidList']
+        self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
+
+    def fetch_weekly_rank(self, week_text, top_text, tklist, found_label):
+        tklist.delete(0, tk.END)
+        week = DateToTimestamp.week_tmp(week_text.get())
+        res = QueryManager.query_popular_rank({'timestamp': week, 'temporalGranularity': 'weekly'})
+        aids = res[0]['articleAidList']
+        self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
+
+    def fetch_monthly_rank(self, monthly_text, top_text, tklist, found_label):
+        tklist.delete(0, tk.END)
+        month = DateToTimestamp.month_tmp(monthly_text.get())
+        res = QueryManager.query_popular_rank({'timestamp': month, 'temporalGranularity': 'monthly'})
+        aids = res[0]['articleAidList']
+        self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
 
 
 class StartPage(tk.Frame):
@@ -156,7 +184,7 @@ class StartPage(tk.Frame):
         articles_button.pack(side=tk.LEFT)
 
         read_button = tk.Button(buttons, text="Popular Rank",
-                                command=lambda: controller.show_frame(ReadPage), font=LARGE_FONT)
+                                command=lambda: controller.show_frame(PopularRankPage), font=LARGE_FONT)
         read_button.pack(side=tk.LEFT)
 
 
@@ -499,7 +527,7 @@ class ArticlePage(tk.Frame):
         article_entry.pack(side=tk.LEFT)
 
         user_submit = tk.Button(top_frame, text='Submit',
-                                command=lambda: controller.fetch_article(article_text, result_list, found_label),
+                                command=lambda: controller.fetch_article(article_text.get(), result_list, found_label),
                                 pady=5, padx=20)
         user_submit.pack(side=tk.LEFT)
 
@@ -562,6 +590,172 @@ class BeReadPage(tk.Frame):
         back_button = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
         back_button.pack(side=tk.BOTTOM, pady=30)
+
+
+class PopularRankPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Popular Rank", font=LARGE_FONT, fg='blue')
+        label.pack(pady=10, padx=10)
+
+        buttons = tk.Frame(self)
+        buttons.pack()
+
+        user_button = tk.Button(buttons, text="Daily",
+                           command=lambda: controller.show_frame(DailyRankPage), font=MEDIUM_FONT)
+        user_button.pack(side=tk.LEFT)
+
+        articles_button = tk.Button(buttons, text="Weekly",
+                            command=lambda: controller.show_frame(WeeklyRankPage), font=MEDIUM_FONT)
+        articles_button.pack(side=tk.LEFT)
+
+        read_button = tk.Button(buttons, text="Monthly",
+                                command=lambda: controller.show_frame(MonthlyRankPage), font=MEDIUM_FONT)
+        read_button.pack(side=tk.LEFT)
+
+        button1 = tk.Button(self, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack(pady=30)
+
+class DailyRankPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Daily Rank", font=LARGE_FONT, fg='blue')
+        label.pack(pady=10, padx=10)
+
+        top_frame = tk.Frame(self)
+        top_frame.pack()
+
+        day_label = tk.Label(top_frame, text='Day', font=('bold', 14), pady=20, padx=20)
+        day_label.pack(side=tk.LEFT)
+
+        day_text = tk.StringVar()
+        day_entry = tk.Entry(top_frame, textvariable=day_text)
+        day_entry.pack(side=tk.LEFT)
+
+        top_label = tk.Label(top_frame, text='Top', font=('bold', 14), pady=20, padx=20)
+        top_label.pack(side=tk.LEFT)
+
+        top_text = tk.StringVar()
+        top_entry = tk.Entry(top_frame, textvariable=top_text)
+        top_entry.pack(side=tk.LEFT)
+
+
+        user_submit = tk.Button(top_frame, text='Submit',
+                                command=lambda: controller.fetch_daily_rank(day_text, top_text, result_list, found_label),
+                                pady=5, padx=20)
+        user_submit.pack(side=tk.LEFT)
+
+        found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
+        found_label.pack()
+
+        result_list = tk.Listbox(self, height=8, width=50)
+        result_list.pack()
+
+        back_buttons = tk.Frame(self)
+        back_buttons.pack(pady=10)
+
+        back = tk.Button(back_buttons, text="Back",
+                         command=lambda: controller.show_frame(PopularRankPage))
+        back.pack(side=tk.LEFT)
+
+        button1 = tk.Button(back_buttons, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack(side=tk.LEFT)
+
+
+class WeeklyRankPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Weekly Rank", font=LARGE_FONT, fg='blue')
+        label.pack(pady=10, padx=10)
+
+        top_frame = tk.Frame(self)
+        top_frame.pack()
+
+        week_label = tk.Label(top_frame, text='Week', font=('bold', 14), pady=20, padx=20)
+        week_label.pack(side=tk.LEFT)
+
+        week_text = tk.StringVar()
+        week_entry = tk.Entry(top_frame, textvariable=week_text)
+        week_entry.pack(side=tk.LEFT)
+
+        top_label = tk.Label(top_frame, text='Top', font=('bold', 14), pady=20, padx=20)
+        top_label.pack(side=tk.LEFT)
+
+        top_text = tk.StringVar()
+        top_entry = tk.Entry(top_frame, textvariable=top_text)
+        top_entry.pack(side=tk.LEFT)
+
+
+        user_submit = tk.Button(top_frame, text='Submit',
+                                command=lambda: controller.fetch_weekly_rank(week_text, top_text, result_list, found_label),
+                                pady=5, padx=20)
+        user_submit.pack(side=tk.LEFT)
+
+        found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
+        found_label.pack()
+
+        result_list = tk.Listbox(self, height=8, width=50)
+        result_list.pack()
+
+        back_buttons = tk.Frame(self)
+        back_buttons.pack(pady=10)
+
+        back = tk.Button(back_buttons, text="Back",
+                         command=lambda: controller.show_frame(PopularRankPage))
+        back.pack(side=tk.LEFT)
+
+        button1 = tk.Button(back_buttons, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack(side=tk.LEFT)
+
+
+class MonthlyRankPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Monthly Rank", font=LARGE_FONT, fg='blue')
+        label.pack(pady=10, padx=10)
+
+        top_frame = tk.Frame(self)
+        top_frame.pack()
+
+        month_label = tk.Label(top_frame, text='Month', font=('bold', 14), pady=20, padx=20)
+        month_label.pack(side=tk.LEFT)
+
+        month_text = tk.StringVar()
+        month_entry = tk.Entry(top_frame, textvariable=month_text)
+        month_entry.pack(side=tk.LEFT)
+
+        top_label = tk.Label(top_frame, text='Top', font=('bold', 14), pady=20, padx=20)
+        top_label.pack(side=tk.LEFT)
+
+        top_text = tk.StringVar()
+        top_entry = tk.Entry(top_frame, textvariable=top_text)
+        top_entry.pack(side=tk.LEFT)
+
+
+        user_submit = tk.Button(top_frame, text='Submit',
+                                command=lambda: controller.fetch_monthly_rank(month_text, top_text, result_list, found_label),
+                                pady=5, padx=20)
+        user_submit.pack(side=tk.LEFT)
+
+        found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
+        found_label.pack()
+
+        result_list = tk.Listbox(self, height=8, width=50)
+        result_list.pack()
+
+        back_buttons = tk.Frame(self)
+        back_buttons.pack(pady=10)
+
+        back = tk.Button(back_buttons, text="Back",
+                         command=lambda: controller.show_frame(PopularRankPage))
+        back.pack(side=tk.LEFT)
+
+        button1 = tk.Button(back_buttons, text="Back to Home",
+                            command=lambda: controller.show_frame(StartPage))
+        button1.pack(side=tk.LEFT)
 
 
 if __name__ == '__main__':
