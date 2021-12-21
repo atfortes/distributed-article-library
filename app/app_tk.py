@@ -1,11 +1,17 @@
+import os
+import vlc
+import shutil
 import tkinter as tk
+from PIL import Image, ImageTk
 from mongodb.query_manager import *
 from mongodb.collection import *
+from hadoop.hadoop_manager import HadoopManager
 
+hdfs = HadoopManager()
+TMP_FILE_DIR = './tmp/'
 HUGE_FONT = ("Verdana", 100)
 LARGE_FONT = ("Verdana", 26)
 MEDIUM_FONT = ("Verdana", 18)
-
 
 class ArticleApp(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -136,22 +142,25 @@ class ArticleApp(tk.Tk):
         tklist.delete(0, tk.END)
         day = DateToTimestamp.day_tmp(day_text.get())
         res = QueryManager.query_popular_rank({'timestamp': day, 'temporalGranularity': 'daily'})
-        aids = res[0]['articleAidList']
-        self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
+        if res:
+            aids = res[0]['articleAidList']
+            self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
 
     def fetch_weekly_rank(self, week_text, top_text, tklist, found_label):
         tklist.delete(0, tk.END)
         week = DateToTimestamp.week_tmp(week_text.get())
         res = QueryManager.query_popular_rank({'timestamp': week, 'temporalGranularity': 'weekly'})
-        aids = res[0]['articleAidList']
-        self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
+        if res:
+            aids = res[0]['articleAidList']
+            self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
 
     def fetch_monthly_rank(self, monthly_text, top_text, tklist, found_label):
         tklist.delete(0, tk.END)
         month = DateToTimestamp.month_tmp(monthly_text.get())
         res = QueryManager.query_popular_rank({'timestamp': month, 'temporalGranularity': 'monthly'})
-        aids = res[0]['articleAidList']
-        self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
+        if res:
+            aids = res[0]['articleAidList']
+            self.fetch_article(','.join(aids[:int(top_text.get())]), tklist, found_label, sort=False)
 
     def fetch_article_user(self, uid, tklist, found_label):
         tklist.delete(0, tk.END)
@@ -165,6 +174,42 @@ class ArticleApp(tk.Tk):
         uids = set(map(lambda x: x['uid'], res))
         self.fetch_user(','.join(uids), tklist, found_label)
 
+
+    def open_article(self, list):
+        selection = list.curselection()
+        if selection:
+            i = 5
+            article = 'article' + list.get(selection[0]).split()[2][:-1]
+            newWindow = tk.Toplevel()
+            newWindow.title(article)
+            newWindow.geometry("953x600")
+            frame = tk.Frame(newWindow)
+            frame.pack()
+            article_files = hdfs.list_article(article)
+            for file in article_files:
+                ext = file.split('.')[-1]
+                if ext == 'txt':
+                    height = 22
+                    width = 70
+                    text = hdfs.read_file(article, file).decode('utf-8')
+                    text_box = tk.Text(frame, height=height, width=width)
+                    text_box.insert('end', text)
+                    text_box.config(state='disabled')
+                    text_box.grid(row=0, column=1)
+                elif ext == 'jpg':
+                    hdfs.download_file(article, file, TMP_FILE_DIR + file)
+                    image = Image.open(TMP_FILE_DIR + file)
+                    image = image.resize((150, 250))
+                    img = ImageTk.PhotoImage(image)
+                    panel = tk.Label(frame, image=img)
+                    panel.image = img
+                    panel.grid(row=0, column=i)
+                    i += 1
+                elif ext == 'flv':
+                    hdfs.download_file(article, file, TMP_FILE_DIR + file)
+                    video = vlc.MediaPlayer(TMP_FILE_DIR + file)
+                    video.audio_set_volume(0)
+                    video.play()
 
 
 class StartPage(tk.Frame):
@@ -225,11 +270,11 @@ class UserPage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=20, width=80)
         result_list.pack()
 
         buttons = tk.Frame(self)
-        buttons.pack(pady=10)
+        buttons.pack(pady=5)
 
         create_user_button = tk.Button(buttons, text="Create User",
                            command=lambda: controller.show_frame(CreateUserPage))
@@ -245,7 +290,7 @@ class UserPage(tk.Frame):
 
         back_button = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        back_button.pack(side=tk.BOTTOM, pady=30)
+        back_button.pack(pady=5)
 
 
 class CreateUserPage(tk.Frame):
@@ -547,19 +592,19 @@ class ArticlePage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=20, width=80)
         result_list.pack()
 
         buttons = tk.Frame(self)
         buttons.pack(pady=10)
 
-        edit_article_button = tk.Button(buttons, text="Read article",
-                                     command=lambda: controller.show_frame(ArticlePage))
-        edit_article_button.pack()
+        edit_user_button = tk.Button(buttons, text="Read article",
+                                     command=lambda: controller.open_article(result_list))
+        edit_user_button.pack()
 
         back_button = tk.Button(self, text="Back to Home",
                             command=lambda: controller.show_frame(StartPage))
-        back_button.pack(side=tk.BOTTOM, pady=30)
+        back_button.pack(pady=5)
 
 
 class ReadPage(tk.Frame):
@@ -601,7 +646,7 @@ class ReadPage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=15, width=80)
         result_list.pack()
 
         button1 = tk.Button(self, text="Back to Home",
@@ -633,7 +678,7 @@ class BeReadPage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=20, width=80)
         result_list.pack()
 
         back_button = tk.Button(self, text="Back to Home",
@@ -689,7 +734,6 @@ class DailyRankPage(tk.Frame):
         top_entry = tk.Entry(top_frame, textvariable=top_text)
         top_entry.pack(side=tk.LEFT)
 
-
         user_submit = tk.Button(top_frame, text='Submit',
                                 command=lambda: controller.fetch_daily_rank(day_text, top_text, result_list, found_label),
                                 pady=5, padx=20)
@@ -698,8 +742,12 @@ class DailyRankPage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=20, width=80)
         result_list.pack()
+
+        edit_user_button = tk.Button(self, text="Read article",
+                                     command=lambda: controller.open_article(result_list))
+        edit_user_button.pack(pady=10)
 
         back_buttons = tk.Frame(self)
         back_buttons.pack(pady=10)
@@ -736,7 +784,6 @@ class WeeklyRankPage(tk.Frame):
         top_entry = tk.Entry(top_frame, textvariable=top_text)
         top_entry.pack(side=tk.LEFT)
 
-
         user_submit = tk.Button(top_frame, text='Submit',
                                 command=lambda: controller.fetch_weekly_rank(week_text, top_text, result_list, found_label),
                                 pady=5, padx=20)
@@ -745,8 +792,12 @@ class WeeklyRankPage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=20, width=80)
         result_list.pack()
+
+        edit_user_button = tk.Button(self, text="Read article",
+                                     command=lambda: controller.open_article(result_list))
+        edit_user_button.pack(pady=10)
 
         back_buttons = tk.Frame(self)
         back_buttons.pack(pady=10)
@@ -783,7 +834,6 @@ class MonthlyRankPage(tk.Frame):
         top_entry = tk.Entry(top_frame, textvariable=top_text)
         top_entry.pack(side=tk.LEFT)
 
-
         user_submit = tk.Button(top_frame, text='Submit',
                                 command=lambda: controller.fetch_monthly_rank(month_text, top_text, result_list, found_label),
                                 pady=5, padx=20)
@@ -792,8 +842,12 @@ class MonthlyRankPage(tk.Frame):
         found_label = tk.Label(self, text='', font=('bold', 14), padx=20)
         found_label.pack()
 
-        result_list = tk.Listbox(self, height=8, width=50)
+        result_list = tk.Listbox(self, height=20, width=80)
         result_list.pack()
+
+        edit_user_button = tk.Button(self, text="Read article",
+                                     command=lambda: controller.open_article(result_list))
+        edit_user_button.pack(pady=10)
 
         back_buttons = tk.Frame(self)
         back_buttons.pack(pady=10)
@@ -808,5 +862,9 @@ class MonthlyRankPage(tk.Frame):
 
 
 if __name__ == '__main__':
+    if not os.path.isdir(TMP_FILE_DIR):
+        os.mkdir(TMP_FILE_DIR)
     app = ArticleApp()
     app.mainloop()
+    if os.path.isdir(TMP_FILE_DIR):
+        shutil.rmtree(TMP_FILE_DIR, ignore_errors=True)

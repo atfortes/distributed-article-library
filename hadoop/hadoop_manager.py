@@ -1,20 +1,23 @@
 import os
+import shutil
 import pyhdfs
 
-HOST='localhost'
-PORT='9870'
-ARTICLES_PATH='/user/root/articles/'
+HOST = 'localhost'
+PORT = '9870'
+USER_NAME = 'root'
+ARTICLES_PATH = '/user/root/articles/'
+
 
 class HadoopManager:
 
-    def __init__(self, HOST: str, PORT: str, user_name='root') -> None:
+    def __init__(self) -> None:
         self.client = pyhdfs.HdfsClient(hosts=[
             f'{HOST}:{PORT}'
-            ], user_name=user_name)
+        ], user_name=USER_NAME)
 
     # general monitoring methods
 
-    def exists(self, path: str) -> bool:
+    def exists(self, path) -> bool:
         return self.client.exists(ARTICLES_PATH + path)
 
     def list_status(self, path) -> list:
@@ -71,7 +74,7 @@ class HadoopManager:
             files[file] = self.read_file(article, file)
         return files
 
-    def upload_article(self, source_path, article) -> None:
+    def upload_article(self, source_path: str, article: str) -> None:
         if self.exists(article):
             self.delete_article(article)
         else:
@@ -79,15 +82,15 @@ class HadoopManager:
         for source_file in os.listdir(source_path):
             self.upload_file(source_file, article, source_file.split('/')[-1])
 
-    def download_article(self, article, dest_path):
+    def download_article(self, article: str, dest_path: str) -> None:
         if os.path.isdir(dest_path):
-            os.rmdir(dest_path)
+            shutil.rmtree(dest_path, ignore_errors=True)
         os.mkdir(dest_path)
         files = self.list_article(article)
         for file in files:
             self.download_file(article, file, dest_path + file)
 
-    def delete_article(self, article) -> None:
+    def delete_article(self, article: str) -> None:
         files = self.list_article(article)
         for file in files:
             self.delete_file(article, file)

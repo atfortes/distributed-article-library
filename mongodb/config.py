@@ -12,7 +12,7 @@ import json
 
 class MongoInit:
     def __init__(self):
-        self.root_dir = '../python-generate-3-sized-datasets_new/'
+        self.root_dir = '../data-generation/'
         self.user_path = 'user.dat'
         self.article_path = 'article.dat'
         self.read_path = 'read.dat'
