@@ -1,3 +1,4 @@
+import pandas as pd
 from pymongo import InsertOne, DeleteOne, ReplaceOne, UpdateOne
 from mongodb.query_manager import *
 from mongodb.user import *
@@ -76,8 +77,6 @@ class MongoInit:
             hk_index = np.argwhere(np.array(regions) == 'Hong Kong').reshape(-1)
             Read.bulk_write({'Beijing': list(np.array(bulk_list)[beijing_index]),
                              'Hong Kong': list(np.array(bulk_list)[hk_index])})
-        self.init_be_read()
-        self.init_popular_rank()
         read_file.close()
 
     def init_be_read(self):
@@ -139,42 +138,51 @@ class MongoInit:
 
     def init_popular_rank(self):
         print('Initializing popular-rank collection...\n')
-        res = QueryManager.query_read({}, {'timestamp': 1, 'aid': 1})
+        read_file = open(self.root_dir + self.read_path, 'r')
         time_reads = {'daily': {}, 'weekly': {}, 'monthly': {}}
-        for read in res:
+        for line in read_file.readlines():
+            read = json.loads(line)
             aid = read['aid']
             t = ReadTime(read['timestamp'])
-            if not aid in time_reads['daily']:
-                time_reads['daily'][aid] = {}
-                time_reads['weekly'][aid] = {}
-                time_reads['monthly'][aid] = {}
             for g in time_reads.keys():
-                if not t.read_timestamp[g] in time_reads[g][aid]:
-                    time_reads[g][aid][t.read_timestamp[g]] = 1
+                if not t.read_timestamp[g] in time_reads[g]:
+                    time_reads[g][t.read_timestamp[g]] = {}
+                if not aid in time_reads[g][t.read_timestamp[g]]:
+                    time_reads[g][t.read_timestamp[g]][aid] = 1
                 else:
-                    time_reads[g][aid][t.read_timestamp[g]] += 1
+                    time_reads[g][t.read_timestamp[g]][aid] += 1
 
-        insert_dict = {}
+        prid = 0
+        insert_dict = {'daily': [], 'weekly': [], 'monthly': []}
         for g in time_reads.keys():
-            for aid in time_reads[g]:
-                time_reads[g][aid] = max(time_reads[g][aid].items(), key=lambda x: x[1])[1]
-            time_reads[g] = list(map(lambda x: x[0], sorted(time_reads[g].items(), key=lambda x: x[1], reverse=True)))
-            id = len(QueryManager.query_popular_rank())
-            doc = {
-                'id': f'pr{id}',
-                'timestamp': str(Collection.get_current_timestamp()),
-                'temporalGranularity': g,
-                'articleAidList': time_reads[g]
-            }
-            insert_dict[g] = [InsertOne(doc)]
+            for time in time_reads[g]:
+                time_reads[g][time] = sorted(time_reads[g][time].items(), key=lambda x: x[1], reverse=True)
+                time_reads[g][time] = list(map(lambda x: x[0], time_reads[g][time]))
+                doc = {
+                    'id': f'pr{prid}',
+                    'temporalGranularity': g,
+                    'articleAidList': time_reads[g][time]
+                }
+                if g == 'daily':
+                    doc['timestamp'] = DateToTimestamp.day_tmp(time)
+                elif g == 'weekly':
+                    doc['timestamp'] = DateToTimestamp.week_tmp(time)
+                elif g == 'monthly':
+                    doc['timestamp'] = DateToTimestamp.month_tmp(time)
+                insert_dict[g] += [InsertOne(doc)]
+                prid += 1
+
         PopularRank.write(insert_dict)
 
     def init_all(self):
         self.init_user()
         self.init_article()
         self.init_read()
+        self.init_be_read()
+        self.init_popular_rank()
 
 
 if __name__ == '__main__':
     init = MongoInit()
     init.init_all()
+

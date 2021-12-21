@@ -24,3 +24,17 @@ class ReadTime:
             'weekly': f'{t.week}-{t.year}',
             'monthly': f'{t.month}-{t.year}'
         }
+
+
+class DateToTimestamp:
+    @classmethod
+    def day_tmp(cls, day):
+        return str(pd.to_datetime(day, format='%d-%m-%Y').value // 10 ** 6)
+
+    @classmethod
+    def week_tmp(cls, week):
+        return str(pd.to_datetime('0-' + week, format='%w-%W-%Y').value // 10 ** 6)
+
+    @classmethod
+    def month_tmp(cls, month):
+        return str(pd.to_datetime(month, format='%m-%Y').value // 10 ** 6)

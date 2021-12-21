@@ -34,6 +34,16 @@ class QueryManager:
         User.bulk_write(insert_dict)
 
     @classmethod
+    def update_user(self, user_dict):
+        uid = user_dict['uid']
+        del user_dict['uid']
+        cache = Cache()
+        cache.delete_user(uid)
+        update_dict = {'Beijing': [UpdateOne({'uid': uid}, {'$set': user_dict}, upsert=False)],
+                       'Hong Kong': [UpdateOne({'uid': uid}, {'$set': user_dict}, upsert=False)]}
+        User.bulk_write(update_dict)
+
+    @classmethod
     def delete_user(self, user_dict):
         cache = Cache()
         cache.delete_user(user_dict['uid'])
