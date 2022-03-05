@@ -385,7 +385,7 @@ cd ..
 
 Now that every component is up, we can check which containers are currently running:
 
-<img src=docker.png width="1000">
+<img src=figs/docker.png width="1000">
 
 ## Run the python application
 
@@ -403,21 +403,21 @@ python3 app_tk.py
 
 Now that the application is up and running, we should be presented with the next menu:
 
-<img src=apphome.png width="550">
+<img src=figs/apphome.png width="550">
 
 Here, we are able to read, insert, edit and delete users at will. Moreover, similar functionalities are also possible for the rest of the structured tables. Finally, one may also access the contents of a given article directly from the application interface. Follows some examples of the implemented features:
 
 - Analyzing the articles read by user 1:
 
-  <img src=appreads.png width="550">
+  <img src=figs/appreads.png width="550">
 
 - Querying the top-5 articles in a day (01/01/2018):
 
-  <img src=appdailyrank.png width="550">
+  <img src=figs/appdailyrank.png width="550">
 
 - Reading the contents of article 6965:
 
-  <img src=apparticle.png width="550">
+  <img src=figs/apparticle.png width="550">
 
 And many more features may be explored...
 
@@ -425,19 +425,19 @@ And many more features may be explored...
 
 We can monitor each DBMS (including the router) by using MongoDB Compass:
 
-<img src=compass.png width="200">
+<img src=figs/compass.png width="200">
 
 By checking the router, we can see every sharded collection in our cluster:
 
-<img src=collections.png width="625">
+<img src=figs/collections.png width="625">
 
 For each collection, we can check the existent documents:
 
-<img src=documents.png width="625">
+<img src=figs/documents.png width="625">
 
 Also, we can check which collection there will be in a specific DBMS, for instance DBMS2:
 
-<img src=distribution.png width="1000">
+<img src=figs/distribution.png width="1000">
 
 
 ## Monitoring HDFS
@@ -450,22 +450,22 @@ http://<PRIVATE IP>:9870/
 
 Which should redirect us to the following monitoring page:
 
-<img src=hdfshome.png width="600">
+<img src=figs/hdfshome.png width="600">
 
 From here we are able to analyze the live datanodes, as well as the distribution of the blocks between them:
 
-<img src=hdfsdata.png width="1000">
+<img src=figs/hdfsdata.png width="1000">
 
 Moreover, we may also browse the articles present in the distributed file system:
 
-<img src=hdfsarticles.png width="1000">
+<img src=figs/hdfsarticles.png width="1000">
 <br />
 <br />
 <br />
 <br />
 And read their contents:
 <br />
-<img src=hdfsexample.png width="1000">
+<img src=figs/hdfsexample.png width="1000">
 
 ## Shut down
 
